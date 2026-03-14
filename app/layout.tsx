@@ -32,7 +32,7 @@ export default function RootLayout({
   // #endregion
 
   return (
-    <ClerkProvider publishableKey={clerkPublishableKey}>
+    <ClerkProvider publishableKey={clerkPublishableKey || undefined}>
       <html lang="en">
         <body className={inter.className}>
           <ConvexClientProvider>{children}</ConvexClientProvider>
