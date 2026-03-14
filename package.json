@@ -12,7 +12,7 @@
     "@clerk/nextjs": "^7.0.4",
     "convex": "^1.33.0",
     "docx": "^8.5.0",
-    "lucide-react": "^0.303.0",
+    "lucide-react": "^0.468.0",
     "mammoth": "^1.6.0",
     "next": "^16.1.6",
     "react": "^19.2.4",
