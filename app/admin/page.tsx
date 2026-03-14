@@ -37,7 +37,7 @@ export default function AdminDashboard() {
 
   const forms = storage.getAllForms()
   const quizForms = forms?.filter(f => f.isQuiz) || []
-  const selectedForm = selectedFormId ? quizForms.find(f => f._id === selectedFormId || f.id === selectedFormId) : null
+  const selectedForm = selectedFormId ? quizForms.find(f => f.id === selectedFormId) : null
   const responses = selectedFormId ? storage.getResponses(selectedFormId) : []
   const isLoading = forms === undefined
 
@@ -167,7 +167,7 @@ export default function AdminDashboard() {
       <div className="container mx-auto px-4 py-8">
         <div className="grid md:grid-cols-4 gap-6 mb-8">
           {quizForms.map((form) => {
-            const formId = form._id || form.id
+            const formId = form.id
             const formResponses = storage.getResponses(formId) || []
             return (
               <button

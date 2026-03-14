@@ -40,7 +40,7 @@ export default function FormViewPage() {
   )
   
   const form = userForm || (convexForm ? {
-    id: (convexForm as any)._id || convexForm.id,
+    id: convexForm._id,
     title: convexForm.title,
     description: convexForm.description,
     isQuiz: convexForm.isQuiz,

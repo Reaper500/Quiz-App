@@ -29,7 +29,7 @@ export function useStorage() {
       
       if (existing) {
         // Update existing form
-        const existingId = (existing as any)._id || existing.id
+        const existingId = existing._id
         await saveFormMutation({
           id: existingId,
           userId,
@@ -64,11 +64,11 @@ export function useStorage() {
       if (userId) {
         const forms = getAllFormsQuery || []
         const found = forms.find(f => {
-          const formId = (f as any)._id || f.id
+          const formId = f._id
           return String(formId) === String(id)
         })
         if (found) {
-          const formId = (found as any)._id || found.id
+          const formId = found._id
           return {
             id: formId,
             title: found.title,
@@ -90,7 +90,7 @@ export function useStorage() {
     getAllForms: (): Form[] => {
       const forms = getAllFormsQuery || []
       return forms.map(f => {
-        const formId = (f as any)._id || f.id
+        const formId = f._id
         return {
           id: formId,
           title: f.title,
@@ -122,7 +122,7 @@ export function useStorage() {
         // Fallback: find from user's forms
         const allForms = getAllFormsQuery || []
         const form = allForms.find(f => {
-          const fId = (f as any)._id || f.id
+          const fId = f._id
           return String(fId) === String(response.formId)
         })
         
@@ -130,7 +130,7 @@ export function useStorage() {
           console.error('Form not found for response:', response.formId)
           return
         }
-        convexFormId = (form as any)._id || form.id
+        convexFormId = form._id
       }
 
       await saveResponseMutation({
@@ -149,7 +149,7 @@ export function useStorage() {
       // Need to convert string formId to Convex Id
       const allForms = getAllFormsQuery || []
       const form = allForms.find(f => {
-        const fId = (f as any)._id || f.id
+        const fId = f._id
         return fId === formId || String(fId) === String(formId) || f.title === formId
       })
       
@@ -158,14 +158,14 @@ export function useStorage() {
       // Filter from getAllResponses instead of using getResponses query
       // This avoids the issue of calling useQuery with required args
       const allResponses = getAllResponsesQuery || []
-      const convexFormId = (form as any)._id || form.id
+      const convexFormId = form._id
       const responses = allResponses.filter(r => {
-        const rFormId = (r as any).formId
+        const rFormId = r.formId
         return String(rFormId) === String(convexFormId)
       })
       
       return responses.map(r => ({
-        id: (r as any)._id || r.id,
+        id: r._id,
         formId: r.formId,
         responses: r.responses,
         submittedAt: r.submittedAt,
@@ -180,7 +180,7 @@ export function useStorage() {
     getAllResponses: (): FormResponse[] => {
       const responses = getAllResponsesQuery || []
       return responses.map(r => ({
-        id: (r as any)._id || r.id,
+        id: r._id,
         formId: r.formId,
         responses: r.responses,
         submittedAt: r.submittedAt,
