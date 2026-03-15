@@ -12,9 +12,66 @@ interface State {
 }
 
 export class ConvexErrorBoundary extends Component<Props, State> {
+  private unhandledRejectionHandler?: (event: PromiseRejectionEvent) => void
+  private errorHandler?: (event: ErrorEvent) => void
+
   constructor(props: Props) {
     super(props)
     this.state = { hasError: false, error: null }
+  }
+
+  componentDidMount() {
+    // Catch unhandled promise rejections (like WebSocket errors)
+    this.unhandledRejectionHandler = (event: PromiseRejectionEvent) => {
+      const reason = event.reason
+      const errorMessage = reason?.message || String(reason) || ''
+      
+      if (
+        errorMessage.includes('Convex') ||
+        errorMessage.includes('deployment name') ||
+        errorMessage.includes('CONVEX FATAL ERROR') ||
+        errorMessage.includes('Couldn\'t parse')
+      ) {
+        event.preventDefault()
+        this.setState({ 
+          hasError: true, 
+          error: reason instanceof Error ? reason : new Error(errorMessage) 
+        })
+      }
+    }
+    
+    // Catch unhandled errors
+    this.errorHandler = (event: ErrorEvent) => {
+      const errorMessage = event.message || ''
+      if (
+        errorMessage.includes('Convex') ||
+        errorMessage.includes('deployment name') ||
+        errorMessage.includes('CONVEX FATAL ERROR') ||
+        errorMessage.includes('Couldn\'t parse')
+      ) {
+        event.preventDefault()
+        this.setState({ 
+          hasError: true, 
+          error: event.error || new Error(errorMessage) 
+        })
+      }
+    }
+    
+    if (typeof window !== 'undefined') {
+      window.addEventListener('unhandledrejection', this.unhandledRejectionHandler)
+      window.addEventListener('error', this.errorHandler)
+    }
+  }
+
+  componentWillUnmount() {
+    if (typeof window !== 'undefined') {
+      if (this.unhandledRejectionHandler) {
+        window.removeEventListener('unhandledrejection', this.unhandledRejectionHandler)
+      }
+      if (this.errorHandler) {
+        window.removeEventListener('error', this.errorHandler)
+      }
+    }
   }
 
   static getDerivedStateFromError(error: Error): State {
@@ -23,7 +80,9 @@ export class ConvexErrorBoundary extends Component<Props, State> {
       error.message?.includes('Convex') ||
       error.message?.includes('useMutation') ||
       error.message?.includes('useQuery') ||
-      error.message?.includes('ConvexProvider')
+      error.message?.includes('ConvexProvider') ||
+      error.message?.includes('deployment name') ||
+      error.message?.includes('CONVEX FATAL ERROR')
     
     if (isConvexError) {
       return { hasError: true, error }
