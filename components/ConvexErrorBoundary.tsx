@@ -23,6 +23,14 @@ export class ConvexErrorBoundary extends Component<Props, State> {
   componentDidMount() {
     // Catch unhandled promise rejections (like WebSocket errors)
     this.unhandledRejectionHandler = (event: PromiseRejectionEvent) => {
+      // Don't catch Convex errors on auth pages
+      if (typeof window !== 'undefined') {
+        const path = window.location.pathname
+        if (path.startsWith('/sign-in') || path.startsWith('/sign-up')) {
+          return // Let errors pass through on auth pages
+        }
+      }
+      
       const reason = event.reason
       const errorMessage = reason?.message || String(reason) || ''
       
@@ -42,6 +50,14 @@ export class ConvexErrorBoundary extends Component<Props, State> {
     
     // Catch unhandled errors
     this.errorHandler = (event: ErrorEvent) => {
+      // Don't catch Convex errors on auth pages
+      if (typeof window !== 'undefined') {
+        const path = window.location.pathname
+        if (path.startsWith('/sign-in') || path.startsWith('/sign-up')) {
+          return // Let errors pass through on auth pages
+        }
+      }
+      
       const errorMessage = event.message || ''
       if (
         errorMessage.includes('Convex') ||
@@ -83,6 +99,16 @@ export class ConvexErrorBoundary extends Component<Props, State> {
       error.message?.includes('ConvexProvider') ||
       error.message?.includes('deployment name') ||
       error.message?.includes('CONVEX FATAL ERROR')
+    
+    // Don't catch Convex errors on auth pages - let them render normally
+    // Auth pages don't need Convex, so errors there shouldn't block rendering
+    if (typeof window !== 'undefined') {
+      const path = window.location.pathname
+      if (path.startsWith('/sign-in') || path.startsWith('/sign-up')) {
+        // On auth pages, don't catch Convex errors - they shouldn't need Convex anyway
+        throw error
+      }
+    }
     
     if (isConvexError) {
       return { hasError: true, error }

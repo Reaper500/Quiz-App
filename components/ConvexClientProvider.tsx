@@ -20,17 +20,10 @@ export function ConvexClientProvider({ children }: { children: React.ReactNode }
         console.warn('NEXT_PUBLIC_CONVEX_URL is not set or invalid. Convex features will not work.')
       }
       
-      // During SSR/build, we need to provide a provider to prevent hook errors
-      // Use a valid format URL that won't cause parsing errors but won't connect
-      // This allows the build to complete and hooks to be called safely
-      if (isServer) {
-        // For SSR, use a valid format that won't crash during build
-        // This URL format is valid but won't actually connect
-        return new ConvexReactClient('https://build-time-placeholder.convex.cloud')
-      }
-      
-      // On client-side, return null so error boundary can catch it
-      return null
+      // Always provide a placeholder client to prevent hook errors
+      // This allows components to render without crashing, even if Convex isn't configured
+      // The placeholder URL format is valid but won't actually connect
+      return new ConvexReactClient('https://build-time-placeholder.convex.cloud')
     }
     
     try {
@@ -38,21 +31,13 @@ export function ConvexClientProvider({ children }: { children: React.ReactNode }
       return new ConvexReactClient(convexUrl!)
     } catch (error) {
       console.error('Failed to initialize Convex client:', error)
-      // During SSR, still provide a client to prevent build failures
-      if (isServer) {
-        return new ConvexReactClient('https://build-time-placeholder.convex.cloud')
-      }
-      return null
+      // Always provide a placeholder client to prevent crashes
+      return new ConvexReactClient('https://build-time-placeholder.convex.cloud')
     }
   }, [])
 
-  // Always render ConvexProvider to prevent hook errors during SSR
-  // The client will be a placeholder during build if URL is missing
-  if (!client) {
-    // Only skip provider on client-side if URL is missing
-    // This allows error boundary to catch and show configuration message
-    return <>{children}</>
-  }
-
+  // Always render ConvexProvider to prevent hook errors
+  // Components using Convex hooks will work, but mutations/queries will fail gracefully
+  // The error boundary will catch and display configuration messages when needed
   return <ConvexProvider client={client}>{children}</ConvexProvider>
 }
