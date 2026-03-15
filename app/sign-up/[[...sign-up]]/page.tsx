@@ -21,7 +21,15 @@ export default function SignUpPage() {
     // Track all failed resource loads (404s) - enhanced tracking
     const originalFetch = window.fetch
     window.fetch = function(...args) {
-      const url = typeof args[0] === 'string' ? args[0] : args[0]?.url || 'unknown'
+      // Handle different types: string, URL, or Request
+      let url = 'unknown'
+      if (typeof args[0] === 'string') {
+        url = args[0]
+      } else if (args[0] instanceof URL) {
+        url = args[0].toString()
+      } else if (args[0] && typeof args[0] === 'object' && 'url' in args[0]) {
+        url = (args[0] as Request).url
+      }
       return originalFetch.apply(this, args)
         .then((response) => {
           // Track 404 responses
