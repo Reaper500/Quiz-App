@@ -9,8 +9,10 @@ export default function SignInPage() {
   // #region agent log
   useEffect(() => {
     setMounted(true)
+    // Check if Clerk is available in window (client-side)
+    const clerkAvailable = typeof window !== 'undefined' && !!(window as any).Clerk
     const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
-    fetch('http://127.0.0.1:7243/ingest/69db1d38-4cfc-427c-bac1-c809ff3b8140',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/sign-in/[[...sign-in]]/page.tsx:11',message:'Sign-in page mounted',data:{clerkPublishableKey:clerkPublishableKey?.substring(0,20) || 'MISSING',hasKey:!!clerkPublishableKey,currentPath:window.location.pathname},timestamp:Date.now(),runId:'run1',hypothesisId:'C'})}).catch(()=>{})
+    fetch('http://127.0.0.1:7243/ingest/69db1d38-4cfc-427c-bac1-c809ff3b8140',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/sign-in/[[...sign-in]]/page.tsx:11',message:'Sign-in page mounted',data:{clerkPublishableKey:clerkPublishableKey?.substring(0,20) || 'MISSING',hasKey:!!clerkPublishableKey,clerkAvailable,currentPath:window.location.pathname},timestamp:Date.now(),runId:'run1',hypothesisId:'C'})}).catch(()=>{})
     
     // Check if SignIn component container exists after a delay
     setTimeout(() => {
@@ -96,7 +98,7 @@ export default function SignInPage() {
   
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <SignIn routing="path" path="/sign-in" />
+      <SignIn />
     </div>
   )
 }
