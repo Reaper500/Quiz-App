@@ -89,16 +89,16 @@ export default function Home() {
                 </div>
               ) : (
                 <div className="flex items-center gap-3">
-                  <SignInButton mode="modal">
+                  <Link href="/sign-in">
                     <button className="px-4 py-2 text-gray-700 hover:text-gray-900 font-medium">
                       Sign In
                     </button>
-                  </SignInButton>
-                  <SignUpButton mode="modal">
+                  </Link>
+                  <Link href="/sign-up">
                     <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
                       Sign Up
                     </button>
-                  </SignUpButton>
+                  </Link>
                 </div>
               )
             )}
@@ -249,16 +249,16 @@ export default function Home() {
               Sign in to create and manage your quizzes
             </p>
             <div className="flex items-center justify-center gap-3">
-              <SignInButton mode="modal">
+              <Link href="/sign-in">
                 <button className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
                   Sign In
                 </button>
-              </SignInButton>
-              <SignUpButton mode="modal">
+              </Link>
+              <Link href="/sign-up">
                 <button className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium">
                   Sign Up
                 </button>
-              </SignUpButton>
+              </Link>
             </div>
           </div>
         )}

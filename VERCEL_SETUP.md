@@ -2,41 +2,53 @@
 
 ## Required Environment Variables
 
-To deploy this application to Vercel, you need to configure the following environment variables in your Vercel project settings:
+To deploy this application to Vercel, you need to configure the following environment variables in your Vercel project settings.
+
+### Step-by-Step Instructions:
+
+1. **Go to Vercel Dashboard**: https://vercel.com/dashboard
+2. **Select your project** (Quiz-App or Form)
+3. **Click "Settings"** in the top navigation
+4. **Click "Environment Variables"** in the left sidebar
+5. **Add each variable** by clicking "Add New"
 
 ### 1. Clerk Authentication Variables
 
-1. Go to your Vercel project dashboard
-2. Navigate to **Settings** → **Environment Variables**
-3. Add the following variables:
+Add these two variables:
 
-```
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_YWN0aXZlLXJvZGVudC01Ni5jbGVyay5hY2NvdW50cy5kZXYk
-CLERK_SECRET_KEY=sk_test_eMj3GEer8YsMeGDX71UP7kheuINDZyc4Cxf30K4Hgk
-```
+**Variable 1:**
+- **Name**: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
+- **Value**: `pk_test_YWN0aXZlLXJvZGVudC01Ni5jbGVyay5hY2NvdW50cy5kZXYk`
+- **Environments**: ✅ Production, ✅ Preview, ✅ Development
 
-**Note:** Replace with your actual Clerk keys from your Clerk dashboard.
+**Variable 2:**
+- **Name**: `CLERK_SECRET_KEY`
+- **Value**: `sk_test_eMj3GEer8YsMeGDX71UP7kheuINDZyc4Cxf30K4Hgk`
+- **Environments**: ✅ Production, ✅ Preview, ✅ Development
 
-### 2. Convex Database Variable
+**Note:** Replace with your actual Clerk keys from your Clerk dashboard if different.
 
-Add your Convex deployment URL:
+### 2. Convex Database Variable (REQUIRED - This fixes the error you're seeing!)
 
-```
-NEXT_PUBLIC_CONVEX_URL=https://friendly-frog-18.convex.cloud
-```
+**Variable:**
+- **Name**: `NEXT_PUBLIC_CONVEX_URL`
+- **Value**: `https://friendly-frog-18.convex.cloud`
+- **Environments**: ✅ Production, ✅ Preview, ✅ Development
 
-**Note:** Replace with your actual Convex deployment URL.
+**Note:** Replace with your actual Convex deployment URL if different.
 
-## How to Add Environment Variables in Vercel
+## After Adding Variables
 
-1. Go to your project on [Vercel Dashboard](https://vercel.com/dashboard)
-2. Click on your project
-3. Go to **Settings** → **Environment Variables**
-4. Click **Add New**
-5. Enter the variable name and value
-6. Select the environments where it should be available (Production, Preview, Development)
-7. Click **Save**
-8. **Redeploy** your application for the changes to take effect
+**IMPORTANT:** After adding all environment variables:
+
+1. **Go to the "Deployments" tab** in your Vercel project
+2. **Click the three dots (⋯)** on your latest deployment
+3. **Click "Redeploy"**
+4. **Wait for the deployment to complete**
+
+Alternatively, you can push a new commit to trigger a redeploy automatically.
+
+**The "Configuration Required" message will disappear once the environment variable is set and the site is redeployed.**
 
 ## Important Notes
 
