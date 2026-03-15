@@ -56,9 +56,12 @@ export default function SignUpPage() {
       try {
         const perfObserver = new PerformanceObserver((list) => {
           for (const entry of list.getEntries()) {
-            const resourceEntry = entry as PerformanceResourceTiming
-            if (resourceEntry.responseStatus === 404 || resourceEntry.responseStatus === 0) {
-              fetch('http://127.0.0.1:7243/ingest/69db1d38-4cfc-427c-bac1-c809ff3b8140',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/sign-up/[[...sign-up]]/page.tsx:53',message:'Performance entry 404',data:{name:resourceEntry.name,responseStatus:resourceEntry.responseStatus,initiatorType:resourceEntry.initiatorType},timestamp:Date.now(),runId:'run1',hypothesisId:'D'})}).catch(()=>{})
+            // Type guard for PerformanceResourceTiming
+            if ('responseStatus' in entry) {
+              const resourceEntry = entry as PerformanceEntry & { responseStatus?: number; name?: string; initiatorType?: string }
+              if (resourceEntry.responseStatus === 404 || resourceEntry.responseStatus === 0) {
+                fetch('http://127.0.0.1:7243/ingest/69db1d38-4cfc-427c-bac1-c809ff3b8140',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/sign-up/[[...sign-up]]/page.tsx:57',message:'Performance entry 404',data:{name:resourceEntry.name || 'unknown',responseStatus:resourceEntry.responseStatus,initiatorType:resourceEntry.initiatorType || 'unknown'},timestamp:Date.now(),runId:'run1',hypothesisId:'D'})}).catch(()=>{})
+              }
             }
           }
         })
