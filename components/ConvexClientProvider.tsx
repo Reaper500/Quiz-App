@@ -12,12 +12,24 @@ function isValidConvexUrl(url: string | undefined): boolean {
 export function ConvexClientProvider({ children }: { children: React.ReactNode }) {
   const client = useMemo(() => {
     const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL
+    const isServer = typeof window === 'undefined'
     
     // Only create client if we have a valid Convex URL
     if (!isValidConvexUrl(convexUrl)) {
-      if (typeof window !== 'undefined') {
+      if (!isServer) {
         console.warn('NEXT_PUBLIC_CONVEX_URL is not set or invalid. Convex features will not work.')
       }
+      
+      // During SSR/build, we need to provide a provider to prevent hook errors
+      // Use a valid format URL that won't cause parsing errors but won't connect
+      // This allows the build to complete and hooks to be called safely
+      if (isServer) {
+        // For SSR, use a valid format that won't crash during build
+        // This URL format is valid but won't actually connect
+        return new ConvexReactClient('https://build-time-placeholder.convex.cloud')
+      }
+      
+      // On client-side, return null so error boundary can catch it
       return null
     }
     
@@ -26,14 +38,19 @@ export function ConvexClientProvider({ children }: { children: React.ReactNode }
       return new ConvexReactClient(convexUrl!)
     } catch (error) {
       console.error('Failed to initialize Convex client:', error)
+      // During SSR, still provide a client to prevent build failures
+      if (isServer) {
+        return new ConvexReactClient('https://build-time-placeholder.convex.cloud')
+      }
       return null
     }
   }, [])
 
-  // If no valid client, render children without ConvexProvider
-  // This will cause Convex hooks to throw, but that's better than a fatal error
-  // Components should handle this gracefully or show an error message
+  // Always render ConvexProvider to prevent hook errors during SSR
+  // The client will be a placeholder during build if URL is missing
   if (!client) {
+    // Only skip provider on client-side if URL is missing
+    // This allows error boundary to catch and show configuration message
     return <>{children}</>
   }
 
