@@ -89,11 +89,18 @@ export default function Home() {
                 </div>
               ) : (
                 <div className="flex items-center gap-3">
-                  <Link href="/sign-in">
+                  {/* #region agent log */}
+                  <Link 
+                    href="/sign-in"
+                    onClick={() => {
+                      fetch('http://127.0.0.1:7243/ingest/69db1d38-4cfc-427c-bac1-c809ff3b8140',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/page.tsx:92',message:'Sign-in link clicked',data:{clerkPublishableKey:process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.substring(0,20) || 'MISSING',isLoaded,isSignedIn},timestamp:Date.now(),runId:'run1',hypothesisId:'A'})}).catch(()=>{})
+                    }}
+                  >
                     <button className="px-4 py-2 text-gray-700 hover:text-gray-900 font-medium">
                       Sign In
                     </button>
                   </Link>
+                  {/* #endregion */}
                   <Link href="/sign-up">
                     <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
                       Sign Up
