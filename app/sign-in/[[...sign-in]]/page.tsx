@@ -14,11 +14,18 @@ export default function SignInPage() {
     const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
     fetch('http://127.0.0.1:7243/ingest/69db1d38-4cfc-427c-bac1-c809ff3b8140',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/sign-in/[[...sign-in]]/page.tsx:11',message:'Sign-in page mounted',data:{clerkPublishableKey:clerkPublishableKey?.substring(0,20) || 'MISSING',hasKey:!!clerkPublishableKey,clerkAvailable,currentPath:window.location.pathname},timestamp:Date.now(),runId:'run1',hypothesisId:'C'})}).catch(()=>{})
     
-    // Check if SignIn component container exists after a delay
+    // Check if SignIn component container exists after delays
     setTimeout(() => {
-      const signInContainer = document.querySelector('[data-clerk-element="sign-in"]') || document.querySelector('.cl-signIn-root')
-      fetch('http://127.0.0.1:7243/ingest/69db1d38-4cfc-427c-bac1-c809ff3b8140',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/sign-in/[[...sign-in]]/page.tsx:15',message:'SignIn component render check',data:{hasContainer:!!signInContainer,bodyChildren:document.body.children.length},timestamp:Date.now(),runId:'run1',hypothesisId:'F'})}).catch(()=>{})
+      const signInContainer = document.querySelector('[data-clerk-element="sign-in"]') || document.querySelector('.cl-signIn-root') || document.querySelector('[class*="clerk"]')
+      const allClerkElements = document.querySelectorAll('[class*="clerk"], [data-clerk]')
+      fetch('http://127.0.0.1:7243/ingest/69db1d38-4cfc-427c-bac1-c809ff3b8140',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/sign-in/[[...sign-in]]/page.tsx:18',message:'SignIn component render check (2s)',data:{hasContainer:!!signInContainer,clerkElementsCount:allClerkElements.length,bodyChildren:document.body.children.length,htmlContent:document.body.innerHTML.substring(0,200)},timestamp:Date.now(),runId:'run1',hypothesisId:'F'})}).catch(()=>{})
     }, 2000)
+    
+    setTimeout(() => {
+      const signInContainer = document.querySelector('[data-clerk-element="sign-in"]') || document.querySelector('.cl-signIn-root') || document.querySelector('[class*="clerk"]')
+      const allClerkElements = document.querySelectorAll('[class*="clerk"], [data-clerk]')
+      fetch('http://127.0.0.1:7243/ingest/69db1d38-4cfc-427c-bac1-c809ff3b8140',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/sign-in/[[...sign-in]]/page.tsx:25',message:'SignIn component render check (5s)',data:{hasContainer:!!signInContainer,clerkElementsCount:allClerkElements.length,bodyChildren:document.body.children.length},timestamp:Date.now(),runId:'run1',hypothesisId:'F'})}).catch(()=>{})
+    }, 5000)
     
     // Track all failed resource loads (404s) - enhanced tracking
     const originalFetch = window.fetch
@@ -98,7 +105,14 @@ export default function SignInPage() {
   
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <SignIn />
+      <SignIn 
+        appearance={{
+          elements: {
+            rootBox: "mx-auto",
+            card: "shadow-lg"
+          }
+        }}
+      />
     </div>
   )
 }

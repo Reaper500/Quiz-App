@@ -110,9 +110,9 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+        <div className="max-w-6xl mx-auto px-4 py-4">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-start md:items-center gap-4">
               <Link
                 href="/"
                 className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
@@ -125,7 +125,7 @@ export default function AdminDashboard() {
                 <p className="text-sm text-gray-600">{user.emailAddresses[0]?.emailAddress}</p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap justify-end">
               {selectedFormId && (
                 <button
                   onClick={handleCopyLink}
@@ -164,8 +164,8 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid md:grid-cols-4 gap-6 mb-8">
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {quizForms.map((form) => {
             const formId = form.id
             const formResponses = storage.getResponses(formId) || []

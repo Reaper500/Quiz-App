@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { parseWordDocument } from '@/lib/wordParser'
+import { parseDocument, parseAnswerKeyFromWord } from '@/lib/wordParser'
 import { Form, FormField } from '@/types/form'
 import { v4 as uuidv4 } from 'uuid'
 import { useStorage } from '@/lib/storage'
@@ -24,23 +24,33 @@ export default function UploadPage() {
   const [isQuiz, setIsQuiz] = useState(true)
   const [timerMinutes, setTimerMinutes] = useState<number | undefined>(undefined)
   const [error, setError] = useState<string | null>(null)
+  const [answerFile, setAnswerFile] = useState<File | null>(null)
+  const [answerKeyApplied, setAnswerKeyApplied] = useState(false)
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0]
-    if (selectedFile) {
-      if (selectedFile.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || 
-          selectedFile.type === 'application/msword' ||
-          selectedFile.name.endsWith('.docx') ||
-          selectedFile.name.endsWith('.doc')) {
-        setFile(selectedFile)
-        setError(null)
-        // Auto-set title from filename
-        const nameWithoutExt = selectedFile.name.replace(/\.(docx|doc)$/i, '')
-        setFormTitle(nameWithoutExt)
-      } else {
-        setError('Please upload a Word document (.docx or .doc)')
-        setFile(null)
-      }
+    if (!selectedFile) return
+
+    const lowerName = selectedFile.name.toLowerCase()
+
+    const isWord =
+      selectedFile.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+      selectedFile.type === 'application/msword' ||
+      lowerName.endsWith('.docx') ||
+      lowerName.endsWith('.doc')
+
+    const isPdf =
+      selectedFile.type === 'application/pdf' ||
+      lowerName.endsWith('.pdf')
+
+    if (isWord || isPdf) {
+      setFile(selectedFile)
+      setError(null)
+      const nameWithoutExt = lowerName.replace(/\.(docx|doc|pdf)$/i, '')
+      setFormTitle(nameWithoutExt)
+    } else {
+      setError('Please upload a Word or PDF document (.docx, .doc, .pdf)')
+      setFile(null)
     }
   }
 
@@ -54,26 +64,116 @@ export default function UploadPage() {
     setError(null)
 
     try {
-      const fields = await parseWordDocument(file)
+      // #region agent log
+      fetch('http://127.0.0.1:7243/ingest/69db1d38-4cfc-427c-bac1-c809ff3b8140', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          location: 'app/upload/page.tsx:handleUpload',
+          message: 'Handle upload started',
+          data: {
+            hasQuestionFile: !!file,
+            questionFileName: file?.name,
+            hasAnswerFile: !!answerFile,
+            answerFileName: answerFile?.name,
+          },
+          hypothesisId: 'H2',
+          runId: 'pre-fix',
+          timestamp: Date.now(),
+        }),
+      }).catch(() => {})
+      // #endregion
+
+      const fields = await parseDocument(file)
       // Auto-configure fields as quiz questions
-      const quizFields = fields.map(field => {
+      let quizFields = fields.map(field => {
         if (field.options && field.options.length > 0) {
           return {
             ...field,
             isQuiz: true,
             type: field.options.length === 4 ? 'radio' as const : field.type,
-            points: 1
+            points: field.points || 1
           }
         }
         return field
       })
+
+      // If an answer key file is provided, apply it
+      if (answerFile) {
+        const answerMap = await parseAnswerKeyFromWord(answerFile)
+
+        if (Object.keys(answerMap).length === 0) {
+          setError('Could not read any answers from the answer file. Make sure it has an \"ANSWERS:\" heading and lines like \"1. C\".')
+        } else {
+          // #region agent log
+          fetch('http://127.0.0.1:7243/ingest/69db1d38-4cfc-427c-bac1-c809ff3b8140', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              location: 'app/upload/page.tsx:handleUpload',
+              message: 'Non-empty answer map received',
+              data: {
+                answerCount: Object.keys(answerMap).length,
+                sample: Object.entries(answerMap).slice(0, 5),
+              },
+              hypothesisId: 'H3',
+              runId: 'pre-fix',
+              timestamp: Date.now(),
+            }),
+          }).catch(() => {})
+          // #endregion
+
+          quizFields = quizFields.map((field, index) => {
+            const qNum = index + 1
+            const letter = answerMap[qNum]
+            if (!letter || !field.options || field.options.length === 0) return field
+
+            const idx = letter.charCodeAt(0) - 'A'.charCodeAt(0)
+            if (idx < 0 || idx >= field.options.length) return field
+
+            const correctOption = field.options[idx]
+            return {
+              ...field,
+              isQuiz: true,
+              points: field.points || 1,
+              correctAnswers: [correctOption]
+            }
+          })
+          setAnswerKeyApplied(true)
+        }
+      }
+
+      // #region agent log
+      fetch('http://127.0.0.1:7243/ingest/69db1d38-4cfc-427c-bac1-c809ff3b8140', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          location: 'app/upload/page.tsx:handleUpload',
+          message: 'Quiz fields after processing answer key',
+          data: {
+            totalFields: quizFields.length,
+            withOptions: quizFields.filter(f => (f as any).options && (f as any).options.length > 0).length,
+            withCorrectAnswers: quizFields.filter(f => (f as any).correctAnswers && (f as any).correctAnswers.length > 0).length,
+          },
+          hypothesisId: 'H4',
+          runId: 'pre-fix',
+          timestamp: Date.now(),
+        }),
+      }).catch(() => {})
+      // #endregion
+
       setParsedFields(quizFields)
       setIsQuiz(true) // Auto-enable quiz mode
       setIsProcessing(false)
     } catch (err) {
-      setError('Failed to parse document. Please make sure it\'s a valid Word document.')
-      setIsProcessing(false)
       console.error(err)
+      const lower = file.name.toLowerCase()
+      if (lower.endsWith('.pdf')) {
+        setError('Failed to parse PDF. Please make sure it is text-based (not scanned) and formatted with clear questions and options.')
+      } else {
+        setError('Failed to parse document. Please make sure it\'s a valid Word document.')
+      }
+      setIsProcessing(false)
     }
   }
 
@@ -143,8 +243,8 @@ export default function UploadPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 py-4">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <Link
               href="/"
               className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
@@ -166,7 +266,7 @@ export default function UploadPage() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <div className="max-w-4xl mx-auto px-4 py-8">
         {parsedFields.length === 0 ? (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12">
             <div className="text-center mb-8">
@@ -186,7 +286,7 @@ export default function UploadPage() {
                 <input
                   type="file"
                   id="file-upload"
-                  accept=".docx,.doc,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword"
+                  accept=".docx,.doc,.pdf,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword"
                   onChange={handleFileChange}
                   className="hidden"
                 />
@@ -199,8 +299,32 @@ export default function UploadPage() {
                     Click to upload or drag and drop
                   </span>
                   <span className="text-sm text-gray-500">
-                    Word documents (.docx, .doc)
+                    Word or PDF documents (.docx, .doc, .pdf)
                   </span>
+                </label>
+              </div>
+
+              {/* Answer key upload (optional) */}
+              <div className="mt-6 text-left">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Optional: Upload Answer Key (Word)
+                </label>
+                <p className="text-xs text-gray-500 mb-2">
+                  Use a Word document with an <code>ANSWERS:</code> heading and lines like <code>1. C</code>, <code>2. A</code>.
+                </p>
+                <input
+                  type="file"
+                  id="answer-file-upload"
+                  accept=".docx,.doc,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword"
+                  onChange={(e) => setAnswerFile(e.target.files?.[0] || null)}
+                  className="hidden"
+                />
+                <label
+                  htmlFor="answer-file-upload"
+                  className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 cursor-pointer mt-1"
+                >
+                  <FileText className="w-4 h-4 text-gray-500" />
+                  {answerFile ? answerFile.name : 'Choose answer key file (optional)'}
                 </label>
               </div>
 

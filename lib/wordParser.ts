@@ -94,11 +94,8 @@ function mapLetterToOption(letter: string, options: string[]): string | null {
   return null
 }
 
-export async function parseWordDocument(file: File): Promise<FormField[]> {
-  const arrayBuffer = await file.arrayBuffer()
-  const result = await mammoth.extractRawText({ arrayBuffer })
-  const text = result.value
-
+// Core parser reused for both Word and PDF: plain text -> FormField[]
+export function parseQuestionsFromPlainText(text: string): FormField[] {
   let fields: FormField[] = []
   const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0)
 
@@ -159,6 +156,10 @@ export async function parseWordDocument(file: File): Promise<FormField[]> {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]
     
+    // Detect if this line contains multiple inline options like "A) ... B) ... C) ... D) ..."
+    const inlineOptions = splitMultipleOptions(line)
+    const hasInlineOptions = inlineOptions.length > 1
+
     // Check if line is a numbered question (1., 2., Q1, Question 1, etc.)
     const numberedQuestionMatch = line.match(/^(\d+[.)]|Q\d+[.:]|Question\s+\d+[.:])\s*(.+)/i)
     
@@ -172,7 +173,9 @@ export async function parseWordDocument(file: File): Promise<FormField[]> {
     const isNewQuestion = numberedQuestionMatch || 
                           (line.match(/^\d+[.)]\s+/) && line.length > 5 && !isOption) ||
                           (line.match(/[?？]$/) && !isOption && line.length > 5) ||
-                          (line.match(/^(what|which|who|when|where|how|why|do|does|did|are|is|can|could|would|should)/i) && !isOption && line.length > 10)
+                          (line.match(/^(what|which|who|when|where|how|why|do|does|did|are|is|can|could|would|should)/i) && !isOption && line.length > 10) ||
+                          // Treat any line with multiple inline options as a new question as well
+                          (hasInlineOptions && !isOption)
     
     // If we see a new question after having options, save the previous question
     if (isNewQuestion) {
@@ -211,6 +214,12 @@ export async function parseWordDocument(file: File): Promise<FormField[]> {
       currentOptions = []
       hadOptions = false
       detectedAnswerLetter = null
+
+      // If this same line also includes inline options (A) ... B) ... C) ...), extract them now
+      if (hasInlineOptions) {
+        currentOptions.push(...inlineOptions)
+        hadOptions = true
+      }
     }
     // Check if line is an option
     else if (isOption) {
@@ -499,7 +508,160 @@ export async function parseWordDocument(file: File): Promise<FormField[]> {
     })
   }
 
+  // #region agent log
+  fetch('http://127.0.0.1:7243/ingest/69db1d38-4cfc-427c-bac1-c809ff3b8140', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      location: 'lib/wordParser.ts:parseQuestionsFromPlainText',
+      message: 'Parsed questions from plain text',
+      data: {
+        totalLines: lines.length,
+        totalFields: fields.length,
+        sampleLabels: fields.slice(0, 5).map(f => f.label),
+      },
+      hypothesisId: 'Q1',
+      runId: 'pre-fix',
+      timestamp: Date.now(),
+    }),
+  }).catch(() => {})
+  // #endregion
+
   return fields
+}
+
+// Word-specific wrapper: file -> text -> questions
+export async function parseWordDocument(file: File): Promise<FormField[]> {
+  const arrayBuffer = await file.arrayBuffer()
+  const result = await mammoth.extractRawText({ arrayBuffer })
+  const text = result.value
+  return parseQuestionsFromPlainText(text)
+}
+
+// PDF text extraction using pdfjs
+async function extractPdfText(file: File): Promise<string> {
+  if (typeof window === 'undefined') {
+    throw new Error('PDF parsing is only available in the browser')
+  }
+
+  const pdfjsLib = await import('pdfjs-dist')
+  const pdfjsAny = pdfjsLib as any
+
+  if (pdfjsAny?.GlobalWorkerOptions) {
+    pdfjsAny.GlobalWorkerOptions.workerSrc =
+      `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsAny.version || '3.11.174'}/pdf.worker.min.js`
+  }
+
+  const arrayBuffer = await file.arrayBuffer()
+  const pdf = await pdfjsAny.getDocument({ data: arrayBuffer }).promise
+  let text = ''
+
+  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+    const page = await pdf.getPage(pageNum)
+    const content = await page.getTextContent()
+    const pageText = (content.items as any[])
+      .map(item => ('str' in item ? (item as any).str : ''))
+      .join(' ')
+    text += '\n' + pageText
+  }
+
+  return text
+}
+
+export async function parsePdfDocument(file: File): Promise<FormField[]> {
+  const text = await extractPdfText(file)
+  if (!text || text.trim().length === 0) {
+    throw new Error('Empty text extracted from PDF')
+  }
+  return parseQuestionsFromPlainText(text)
+}
+
+// Unified entry: choose parser based on extension / MIME
+export async function parseDocument(file: File): Promise<FormField[]> {
+  const lower = file.name.toLowerCase()
+  if (file.type === 'application/pdf' || lower.endsWith('.pdf')) {
+    return parsePdfDocument(file)
+  }
+  // Default to Word
+  return parseWordDocument(file)
+}
+
+// Parse a standalone Word answer-key document into { questionNumber: letter }
+export async function parseAnswerKeyFromWord(file: File): Promise<Record<number, string>> {
+  const arrayBuffer = await file.arrayBuffer()
+  const result = await mammoth.extractRawText({ arrayBuffer })
+  const text = result.value
+  const map: Record<number, string> = {}
+
+  // Try to focus on the ANSWERS section if present
+  const lower = text.toLowerCase()
+  let section = text
+  const headingMatch = lower.match(/(answers?|answer\s+key)\s*:/i)
+  if (headingMatch) {
+    const idx = lower.indexOf(headingMatch[0])
+    if (idx >= 0) {
+      section = text.slice(idx + headingMatch[0].length)
+    }
+  }
+
+  // First pass: capture all explicit "number + letter" pairs.
+  // Supports:
+  // "1. A, 2. C, 3. B"   (comma‑separated)
+  // "1 A 2 C 3 B"        (space‑separated)
+  // "1-A 2-C" or "1) A"  (dash / parenthesis)
+  const regex = /(\d+)\s*[\.\-\):]?\s*([A-Za-z])/g
+  let match: RegExpExecArray | null
+  const seenNumbers = new Set<number>()
+  while ((match = regex.exec(section)) !== null) {
+    const qNum = parseInt(match[1], 10)
+    const letter = match[2].toUpperCase()
+    map[qNum] = letter
+    seenNumbers.add(qNum)
+  }
+
+  // Second pass: handle bare letters like your bullets:
+  // "• A, 2. A, 3. A, ..." → infer missing numbers by sequence.
+  // We walk the section in order and whenever we see a lone letter
+  // that is NOT part of an already‑matched "number + letter", we
+  // assign it to the next question number after the last one we saw.
+  let lastNumber = 0
+
+  const tokens = section.split(/[\s,]+/).filter(t => t.length > 0)
+  for (const token of tokens) {
+    const numMatch = token.match(/^(\d+)/)
+    const letterMatch = token.match(/^[A-Za-z]$/)
+
+    if (numMatch) {
+      // Explicit number token, update lastNumber
+      lastNumber = parseInt(numMatch[1], 10)
+    } else if (letterMatch) {
+      const letter = letterMatch[0].toUpperCase()
+      // Only infer if this number doesn't already exist
+      const inferredNumber = lastNumber + 1
+      if (!map[inferredNumber]) {
+        map[inferredNumber] = letter
+        lastNumber = inferredNumber
+      }
+    }
+  }
+  // #region agent log
+  fetch('http://127.0.0.1:7243/ingest/69db1d38-4cfc-427c-bac1-c809ff3b8140', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      location: 'lib/wordParser.ts:parseAnswerKeyFromWord',
+      message: 'Answer key parsed from Word file',
+      data: {
+        totalEntries: Object.keys(map).length,
+        sample: Object.entries(map).slice(0, 5),
+      },
+      hypothesisId: 'H1',
+      runId: 'pre-fix',
+      timestamp: Date.now(),
+    }),
+  }).catch(() => {})
+  // #endregion
+  return map
 }
 
 function createFieldFromQuestion(question: string, options: string[], correctAnswerLetter?: string | null): FormField {

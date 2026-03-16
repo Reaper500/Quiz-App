@@ -113,8 +113,8 @@ export default function BuilderPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 py-4">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <Link
               href="/"
               className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
@@ -122,7 +122,7 @@ export default function BuilderPage() {
               <ArrowLeft className="w-5 h-5" />
               <span>Back to Home</span>
             </Link>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 flex-wrap justify-end">
               <button
                 onClick={handlePreview}
                 className="flex items-center gap-2 px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
@@ -143,7 +143,7 @@ export default function BuilderPage() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-6">
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">

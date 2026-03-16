@@ -67,21 +67,21 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="container mx-auto px-4 py-8">
+      <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Header with Auth */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-5xl font-bold text-gray-900 mb-2">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-8">
+          <div className="text-center md:text-left">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-2">
               Quiz Builder
             </h1>
-            <p className="text-xl text-gray-600">
+            <p className="text-base sm:text-lg md:text-xl text-gray-600">
               Create objective-based quizzes. Upload Word documents with 50+ questions or build manually.
             </p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center justify-end gap-3 flex-wrap">
             {isLoaded && (
               isSignedIn ? (
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 flex-wrap justify-end">
                   <span className="text-sm text-gray-600 hidden md:block">
                     {user?.emailAddresses[0]?.emailAddress}
                   </span>
@@ -112,7 +112,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-6">
+        <div className="w-full max-w-4xl mx-auto grid gap-4 sm:grid-cols-2">
           <Link
             href="/builder"
             className="group bg-white rounded-xl shadow-lg p-8 hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer"
@@ -150,7 +150,7 @@ export default function Home() {
 
         {/* Forms List */}
         {isSignedIn && (
-          <div className="max-w-6xl mx-auto mt-12">
+          <div className="max-w-6xl mx-auto mt-12 px-2 sm:px-4">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-3xl font-bold text-gray-900">Your Forms</h2>
               <Link

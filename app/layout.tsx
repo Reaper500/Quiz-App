@@ -35,7 +35,7 @@ export default function RootLayout({
   return (
     <ClerkProvider publishableKey={clerkPublishableKey || undefined}>
       <html lang="en">
-        <body className={inter.className}>
+        <body className={`${inter.className} min-h-screen overflow-x-hidden bg-gray-50`}>
           <ConvexErrorBoundary>
             <ConvexClientProvider>{children}</ConvexClientProvider>
           </ConvexErrorBoundary>

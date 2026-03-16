@@ -365,7 +365,7 @@ export default function FormViewPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
+        <div className="max-w-4xl mx-auto px-4 py-4">
           <Link
             href="/forms"
             className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900"
@@ -376,7 +376,7 @@ export default function FormViewPage() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8 max-w-3xl">
+      <div className="max-w-3xl mx-auto px-4 py-8">
         {!showQuiz && form.isQuiz && (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Student Information</h2>
