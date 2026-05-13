@@ -11,6 +11,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { useQuery } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 import { Id } from '@/convex/_generated/dataModel'
+import { agentDebugIngestJson } from '@/lib/agentDebugIngest'
 
 export default function FormViewPage() {
   const params = useParams()
@@ -54,19 +55,19 @@ export default function FormViewPage() {
 
   useEffect(() => {
     // #region agent log
-    fetch('http://127.0.0.1:7243/ingest/69db1d38-4cfc-427c-bac1-c809ff3b8140',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/form/[id]/page.tsx:51',message:'useEffect triggered',data:{hasForm:!!form,formIsQuiz:form?.isQuiz,showQuiz,studentName,studentClass},timestamp:Date.now(),runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    agentDebugIngestJson({location:'app/form/[id]/page.tsx:51',message:'useEffect triggered',data:{hasForm:!!form,formIsQuiz:form?.isQuiz,showQuiz,studentName,studentClass},runId:'run1',hypothesisId:'A'});
     // #endregion
     if (form) {
       // If it's a quiz, don't show it until name/class are entered
       // Only set to false if showQuiz hasn't been explicitly set to true by user
       if (form.isQuiz && !showQuiz) {
         // #region agent log
-        fetch('http://127.0.0.1:7243/ingest/69db1d38-4cfc-427c-bac1-c809ff3b8140',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/form/[id]/page.tsx:55',message:'Setting showQuiz to false (isQuiz, initial)',data:{formIsQuiz:form.isQuiz,showQuiz},timestamp:Date.now(),runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        agentDebugIngestJson({location:'app/form/[id]/page.tsx:55',message:'Setting showQuiz to false (isQuiz, initial)',data:{formIsQuiz:form.isQuiz,showQuiz},runId:'run1',hypothesisId:'A'});
         // #endregion
         setShowQuiz(false)
       } else if (!form.isQuiz) {
         // #region agent log
-        fetch('http://127.0.0.1:7243/ingest/69db1d38-4cfc-427c-bac1-c809ff3b8140',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/form/[id]/page.tsx:58',message:'Setting showQuiz to true (not quiz)',data:{formIsQuiz:form.isQuiz},timestamp:Date.now(),runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        agentDebugIngestJson({location:'app/form/[id]/page.tsx:58',message:'Setting showQuiz to true (not quiz)',data:{formIsQuiz:form.isQuiz},runId:'run1',hypothesisId:'A'});
         // #endregion
         setShowQuiz(true)
       }
@@ -415,11 +416,11 @@ export default function FormViewPage() {
                 type="button"
                 onClick={() => {
                   // #region agent log
-                  fetch('http://127.0.0.1:7243/ingest/69db1d38-4cfc-427c-bac1-c809ff3b8140',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/form/[id]/page.tsx:329',message:'Start Quiz button clicked',data:{studentName:studentName.trim(),studentClass:studentClass.trim(),hasName:!!studentName.trim(),hasClass:!!studentClass.trim(),formIsQuiz:form?.isQuiz,showQuiz},timestamp:Date.now(),runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+                  agentDebugIngestJson({location:'app/form/[id]/page.tsx:329',message:'Start Quiz button clicked',data:{studentName:studentName.trim(),studentClass:studentClass.trim(),hasName:!!studentName.trim(),hasClass:!!studentClass.trim(),formIsQuiz:form?.isQuiz,showQuiz},runId:'run1',hypothesisId:'A'});
                   // #endregion
                   if (studentName.trim() && studentClass.trim()) {
                     // #region agent log
-                    fetch('http://127.0.0.1:7243/ingest/69db1d38-4cfc-427c-bac1-c809ff3b8140',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/form/[id]/page.tsx:332',message:'Setting showQuiz to true',data:{studentName:studentName.trim(),studentClass:studentClass.trim()},timestamp:Date.now(),runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+                    agentDebugIngestJson({location:'app/form/[id]/page.tsx:332',message:'Setting showQuiz to true',data:{studentName:studentName.trim(),studentClass:studentClass.trim()},runId:'run1',hypothesisId:'A'});
                     // #endregion
                     setShowQuiz(true)
                   } else {

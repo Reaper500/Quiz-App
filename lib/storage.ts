@@ -16,7 +16,6 @@ export function useStorage() {
   )
   const deleteFormMutation = useMutation(api.forms.deleteForm)
   const saveResponseMutation = useMutation(api.responses.saveResponse)
-  const getAllResponsesQuery = useQuery(api.responses.getAllResponses)
 
   return {
     // Forms
@@ -143,53 +142,6 @@ export function useStorage() {
         studentName: response.studentName,
         studentClass: response.studentClass,
       })
-    },
-
-    getResponses: (formId: string): FormResponse[] => {
-      // Need to convert string formId to Convex Id
-      const allForms = getAllFormsQuery || []
-      const form = allForms.find(f => {
-        const fId = f._id
-        return fId === formId || String(fId) === String(formId) || f.title === formId
-      })
-      
-      if (!form) return []
-      
-      // Filter from getAllResponses instead of using getResponses query
-      // This avoids the issue of calling useQuery with required args
-      const allResponses = getAllResponsesQuery || []
-      const convexFormId = form._id
-      const responses = allResponses.filter(r => {
-        const rFormId = r.formId
-        return String(rFormId) === String(convexFormId)
-      })
-      
-      return responses.map(r => ({
-        id: r._id,
-        formId: r.formId,
-        responses: r.responses,
-        submittedAt: r.submittedAt,
-        score: r.score,
-        maxScore: r.maxScore,
-        answers: r.answers,
-        studentName: r.studentName,
-        studentClass: r.studentClass,
-      }))
-    },
-
-    getAllResponses: (): FormResponse[] => {
-      const responses = getAllResponsesQuery || []
-      return responses.map(r => ({
-        id: r._id,
-        formId: r.formId,
-        responses: r.responses,
-        submittedAt: r.submittedAt,
-        score: r.score,
-        maxScore: r.maxScore,
-        answers: r.answers,
-        studentName: r.studentName,
-        studentClass: r.studentClass,
-      }))
     },
   }
 }

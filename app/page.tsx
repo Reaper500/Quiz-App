@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { SignInButton, SignUpButton, UserButton, useUser } from '@clerk/nextjs'
 import { useStorage } from '@/lib/storage'
 import { Form } from '@/types/form'
+import { agentDebugIngestJson } from '@/lib/agentDebugIngest'
 
 export default function Home() {
   const router = useRouter()
@@ -15,12 +16,12 @@ export default function Home() {
   
   // #region agent log
   useEffect(() => {
-    fetch('http://127.0.0.1:7243/ingest/69db1d38-4cfc-427c-bac1-c809ff3b8140',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/page.tsx:16',message:'Clerk useUser hook result',data:{isLoaded,isSignedIn,hasUser:!!user,userId:user?.id || 'NONE',userEmail:user?.emailAddresses?.[0]?.emailAddress || 'NONE'},timestamp:Date.now(),runId:'run1',hypothesisId:'B'})}).catch(()=>{})
+    agentDebugIngestJson({location:'app/page.tsx:16',message:'Clerk useUser hook result',data:{isLoaded,isSignedIn,hasUser:!!user,userId:user?.id || 'NONE',userEmail:user?.emailAddresses?.[0]?.emailAddress || 'NONE'},runId:'run1',hypothesisId:'B'})
     
     // Track Clerk script loading errors
     window.addEventListener('error', (event) => {
       if (event.message && event.message.includes('clerk')) {
-        fetch('http://127.0.0.1:7243/ingest/69db1d38-4cfc-427c-bac1-c809ff3b8140',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/page.tsx:22',message:'Clerk script loading error detected',data:{errorMessage:event.message,errorSource:event.filename || 'NONE',errorLine:event.lineno || 'NONE',errorCol:event.colno || 'NONE'},timestamp:Date.now(),runId:'run1',hypothesisId:'E'})}).catch(()=>{})
+        agentDebugIngestJson({location:'app/page.tsx:22',message:'Clerk script loading error detected',data:{errorMessage:event.message,errorSource:event.filename || 'NONE',errorLine:event.lineno || 'NONE',errorCol:event.colno || 'NONE'},runId:'run1',hypothesisId:'E'})
       }
     }, true)
   }, [isLoaded, isSignedIn, user])
@@ -93,7 +94,7 @@ export default function Home() {
                   <Link 
                     href="/sign-in"
                     onClick={() => {
-                      fetch('http://127.0.0.1:7243/ingest/69db1d38-4cfc-427c-bac1-c809ff3b8140',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/page.tsx:92',message:'Sign-in link clicked',data:{clerkPublishableKey:process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.substring(0,20) || 'MISSING',isLoaded,isSignedIn},timestamp:Date.now(),runId:'run1',hypothesisId:'A'})}).catch(()=>{})
+                      agentDebugIngestJson({location:'app/page.tsx:92',message:'Sign-in link clicked',data:{clerkPublishableKey:process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.substring(0,20) || 'MISSING',isLoaded,isSignedIn},runId:'run1',hypothesisId:'A'})
                     }}
                   >
                     <button className="px-4 py-2 text-gray-700 hover:text-gray-900 font-medium">

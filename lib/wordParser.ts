@@ -1,6 +1,7 @@
 import mammoth from 'mammoth'
 import { FormField, FieldType } from '@/types/form'
 import { v4 as uuidv4 } from 'uuid'
+import { agentDebugIngestJson } from '@/lib/agentDebugIngest'
 
 // Helper function to split a line that might contain multiple options
 function splitMultipleOptions(line: string): string[] {
@@ -509,22 +510,17 @@ export function parseQuestionsFromPlainText(text: string): FormField[] {
   }
 
   // #region agent log
-  fetch('http://127.0.0.1:7243/ingest/69db1d38-4cfc-427c-bac1-c809ff3b8140', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      location: 'lib/wordParser.ts:parseQuestionsFromPlainText',
-      message: 'Parsed questions from plain text',
-      data: {
-        totalLines: lines.length,
-        totalFields: fields.length,
-        sampleLabels: fields.slice(0, 5).map(f => f.label),
-      },
-      hypothesisId: 'Q1',
-      runId: 'pre-fix',
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {})
+  agentDebugIngestJson({
+    location: 'lib/wordParser.ts:parseQuestionsFromPlainText',
+    message: 'Parsed questions from plain text',
+    data: {
+      totalLines: lines.length,
+      totalFields: fields.length,
+      sampleLabels: fields.slice(0, 5).map(f => f.label),
+    },
+    hypothesisId: 'Q1',
+    runId: 'pre-fix',
+  })
   // #endregion
 
   return fields
@@ -645,21 +641,16 @@ export async function parseAnswerKeyFromWord(file: File): Promise<Record<number,
     }
   }
   // #region agent log
-  fetch('http://127.0.0.1:7243/ingest/69db1d38-4cfc-427c-bac1-c809ff3b8140', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      location: 'lib/wordParser.ts:parseAnswerKeyFromWord',
-      message: 'Answer key parsed from Word file',
-      data: {
-        totalEntries: Object.keys(map).length,
-        sample: Object.entries(map).slice(0, 5),
-      },
-      hypothesisId: 'H1',
-      runId: 'pre-fix',
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {})
+  agentDebugIngestJson({
+    location: 'lib/wordParser.ts:parseAnswerKeyFromWord',
+    message: 'Answer key parsed from Word file',
+    data: {
+      totalEntries: Object.keys(map).length,
+      sample: Object.entries(map).slice(0, 5),
+    },
+    hypothesisId: 'H1',
+    runId: 'pre-fix',
+  })
   // #endregion
   return map
 }

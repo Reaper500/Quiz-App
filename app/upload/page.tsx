@@ -10,6 +10,7 @@ import FieldEditor from '@/components/FieldEditor'
 import { Upload, FileText, Save, ArrowLeft, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { useUser } from '@clerk/nextjs'
+import { agentDebugIngestJson } from '@/lib/agentDebugIngest'
 
 export default function UploadPage() {
   const router = useRouter()
@@ -65,23 +66,18 @@ export default function UploadPage() {
 
     try {
       // #region agent log
-      fetch('http://127.0.0.1:7243/ingest/69db1d38-4cfc-427c-bac1-c809ff3b8140', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          location: 'app/upload/page.tsx:handleUpload',
-          message: 'Handle upload started',
-          data: {
-            hasQuestionFile: !!file,
-            questionFileName: file?.name,
-            hasAnswerFile: !!answerFile,
-            answerFileName: answerFile?.name,
-          },
-          hypothesisId: 'H2',
-          runId: 'pre-fix',
-          timestamp: Date.now(),
-        }),
-      }).catch(() => {})
+      agentDebugIngestJson({
+        location: 'app/upload/page.tsx:handleUpload',
+        message: 'Handle upload started',
+        data: {
+          hasQuestionFile: !!file,
+          questionFileName: file?.name,
+          hasAnswerFile: !!answerFile,
+          answerFileName: answerFile?.name,
+        },
+        hypothesisId: 'H2',
+        runId: 'pre-fix',
+      })
       // #endregion
 
       const fields = await parseDocument(file)
@@ -106,21 +102,16 @@ export default function UploadPage() {
           setError('Could not read any answers from the answer file. Make sure it has an \"ANSWERS:\" heading and lines like \"1. C\".')
         } else {
           // #region agent log
-          fetch('http://127.0.0.1:7243/ingest/69db1d38-4cfc-427c-bac1-c809ff3b8140', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              location: 'app/upload/page.tsx:handleUpload',
-              message: 'Non-empty answer map received',
-              data: {
-                answerCount: Object.keys(answerMap).length,
-                sample: Object.entries(answerMap).slice(0, 5),
-              },
-              hypothesisId: 'H3',
-              runId: 'pre-fix',
-              timestamp: Date.now(),
-            }),
-          }).catch(() => {})
+          agentDebugIngestJson({
+            location: 'app/upload/page.tsx:handleUpload',
+            message: 'Non-empty answer map received',
+            data: {
+              answerCount: Object.keys(answerMap).length,
+              sample: Object.entries(answerMap).slice(0, 5),
+            },
+            hypothesisId: 'H3',
+            runId: 'pre-fix',
+          })
           // #endregion
 
           quizFields = quizFields.map((field, index) => {
@@ -144,22 +135,17 @@ export default function UploadPage() {
       }
 
       // #region agent log
-      fetch('http://127.0.0.1:7243/ingest/69db1d38-4cfc-427c-bac1-c809ff3b8140', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          location: 'app/upload/page.tsx:handleUpload',
-          message: 'Quiz fields after processing answer key',
-          data: {
-            totalFields: quizFields.length,
-            withOptions: quizFields.filter(f => (f as any).options && (f as any).options.length > 0).length,
-            withCorrectAnswers: quizFields.filter(f => (f as any).correctAnswers && (f as any).correctAnswers.length > 0).length,
-          },
-          hypothesisId: 'H4',
-          runId: 'pre-fix',
-          timestamp: Date.now(),
-        }),
-      }).catch(() => {})
+      agentDebugIngestJson({
+        location: 'app/upload/page.tsx:handleUpload',
+        message: 'Quiz fields after processing answer key',
+        data: {
+          totalFields: quizFields.length,
+          withOptions: quizFields.filter(f => (f as any).options && (f as any).options.length > 0).length,
+          withCorrectAnswers: quizFields.filter(f => (f as any).correctAnswers && (f as any).correctAnswers.length > 0).length,
+        },
+        hypothesisId: 'H4',
+        runId: 'pre-fix',
+      })
       // #endregion
 
       setParsedFields(quizFields)
